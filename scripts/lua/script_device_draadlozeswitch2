@@ -1,0 +1,17 @@
+--script_device_draadlozeswitch2.lua
+DeviceName = "Draadloze switch 2" --Name of the device
+LightsName = "Lampen logeerkamer" --Name of the device
+
+commandArray = {}
+if devicechanged[DeviceName] then
+    if otherdevices[DeviceName] == 'Click' then
+        if otherdevices[LightsName] == 'On' then
+            commandArray[LightsName]='Off'
+        elseif otherdevices[LightsName] == 'Off' then
+            commandArray[LightsName]='On'
+        end
+    elseif otherdevices[DeviceName] == 'Double Click' then
+        commandArray[LightsName]='Off'
+    end
+end
+return commandArray
