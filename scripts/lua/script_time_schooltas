@@ -1,0 +1,30 @@
+-- script_time_schooltas.lua
+--------------------------------
+------ Variables to edit ------
+--------------------------------
+DeviceName = "Status" --Name of the device
+debug = true
+DeviceName2 = "Schooltas"
+--------------------------------
+-- End of variables to edit --
+--------------------------------
+time = os.date("*t")
+
+--if debug then print("starting script_time_schooltas") end
+commandArray = {}
+if (otherdevices[DeviceName] == 'Normal' or otherdevices[DeviceName2] == 'On') then
+    if (time.hour == 8 or otherdevices[DeviceName2] == 'On') then
+        if (time.min > 18 and time.min < 20 or otherdevices[DeviceName2] == 'On') then
+            if debug then print('script_time_schooltas: Bericht schooltas gesproken') end
+            os.execute ('/usr/local/bin/izsynth -e voicerss -v nl-nl -W 75 -t "Lars en Nienke, joehoe. Het is tijd om je schooltas te pakken"')
+            os.execute ('/usr/local/bin/izsynth -e voicerss -v nl-nl -W 75 -t "Lars en Nienke, joehoe. Het is tijd om je schooltas te pakken"')
+            --Calcvalue = (10008)
+            --commandArray['Variable:XiaomiMP3']=''..Calcvalue..''
+            --commandArray['Xiaomi Gateway Volume']='Set Level: 100'
+            --commandArray['Xiaomi Gateway MP3']='On'
+            --commandArray['Xiaomi Gateway Volume']='Set Level: 50'
+        end
+    end
+end
+--if debug then print("completed script_time_schooltas") end
+return commandArray
