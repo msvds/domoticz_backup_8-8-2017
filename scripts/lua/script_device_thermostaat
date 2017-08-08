@@ -1,0 +1,72 @@
+-- when motion is detected, the actions are set here
+--------------------------------
+------ Variables to edit ------
+--------------------------------
+debug = true
+--------------------------------
+-- End of variables to edit --
+--------------------------------
+
+commandArray = {}
+ 
+local switches = {
+    Doors={
+        -- The detectors below can be anything that turns "On" when there's activity
+        detectors={
+            'Eetkamerdeur',
+            'Balkondeur slaapkamer'
+        },
+        timeout=5
+    },
+    Windows={
+        detectors={
+            'Dakraam slaapkamer',
+            'Zolderdakraam achter'
+        },
+        timeout=10
+    },
+    Motionsensors={
+        detectors={
+            'Beweging woonkamer',
+            'Beweging kamer Lars'
+        },
+        timeout=5
+    }
+}
+ 
+   
+-- Loop through all the changed devices sent by the trigger
+for deviceName,deviceValue in pairs(devicechanged) do
+ 
+    for variable,devices in pairs(switches) do
+        local status = 0
+        for i, detector in ipairs(devices['detectors']) do
+            -- Check if it is one of the detectors and is set to "On"
+            if detector == deviceName then
+                if debug then print('script_device_thermostat: deviceName ' ..deviceName) end
+                if debug then print('script_device_thermostat: deviceValue ' ..deviceValue) end
+                if debug then print('script_device_thermostat: status ' ..status) end
+                status = 1
+                break
+            end
+        end
+ 
+        -- If one of the sensors was turned on, enable the light and reset the no motion variable
+        if status == 1 then
+            if debug then print('script_device_thermostat: Variable:' .. variable) end
+            commandArray['Variable:' .. variable] = tostring(0)
+            --for i, switch in ipairs(devices['switches']) do
+                --if(otherdevices[switch] == 'Off') then
+                    --if otherdevices[DeviceName] == 'On' then
+                    --    if debug then print('switch ' ..switch .. ' turned on') end
+                    --    commandArray[switch] = 'On'
+                    --elseif otherdevices[DeviceName] == 'Off' then
+                    --    if debug then print('switch ' ..switch .. ' not turned on because it is not dark') end
+                    --end
+                --end
+            --end
+        end
+    end
+end
+ 
+return commandArray
