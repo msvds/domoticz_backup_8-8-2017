@@ -1,0 +1,28 @@
+--script_device_eetkamerdeur.lua
+--------------------------------
+------ Variables to edit ------
+--------------------------------
+DeviceName1 = "IsDonker (virt)" --Name of the device
+DeviceName2 = "SomeoneHome" --Name of the device
+DeviceName3 = "Eetkamerdeur" --Name of the device
+LightsName = "Lampen woonkamer" --Name of the device
+debug = false
+test = otherdevices['Test Switch'] --perform test using test switch "Test Switch", On or Off
+--------------------------------
+-- End of variables to edit --
+--------------------------------
+commandArray = {}
+if devicechanged[DeviceName3] then
+    if otherdevices[DeviceName3] == 'On' then
+        if otherdevices[DeviceName1] == 'On' and otherdevices[DeviceName2] == 'Off' and otherdevices[LightsName] == 'Off' then
+            commandArray[LightsName]='On'
+            os.execute ('/usr/local/bin/izsynth -e voicerss -v nl-nl -W 75 -t "Welkom thuis. Ik heb alvast de lampen aangezet omdat het donker is"')
+            print('script_device_eetkamerdeur: lights turned on')
+            --commandArray['Variable:XiaomiMP3']=''..Calcvalue..''
+            --print('Xiaomi Gateway will play sound stored on bank '..Calcvalue)
+            --commandArray['Xiaomi Gateway MP3']='On'
+        end
+    end
+end
+
+return commandArray
