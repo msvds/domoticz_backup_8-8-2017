@@ -1,0 +1,81 @@
+-- script_time_raamopenbijregen.lua
+-- Own variable connectionLastRunTime (type: Int) is used to store time in system seconds when last notification email was sent
+-- Own variable connectionMessageSentSystemTime (type: Int) is used to store temperature limit (min. value)
+
+--------------------------------
+------ Variables to edit ------
+--------------------------------
+MessageInterval = 300 --Interval of sending email notifications
+DeviceName1 = "Dakraam slaapkamer" --Name of the device
+DeviceName2 = "Zolderdakraam achter" --Name of the device
+test = otherdevices['Test Switch'] --perform test using test switch "Test Switch", On or Off
+debug = false
+--------------------------------
+-- End of variables to edit --
+--------------------------------
+
+function timedifference(s)
+   year = string.sub(s, 1, 4)
+   month = string.sub(s, 6, 7)
+   day = string.sub(s, 9, 10)
+   hour = string.sub(s, 12, 13)
+   minutes = string.sub(s, 15, 16)
+   seconds = string.sub(s, 18, 19)
+   t1 = os.time()
+   t2 = os.time{year=year, month=month, day=day, hour=hour, min=minutes, sec=seconds}
+   difference = os.difftime (t1, t2)
+   return difference
+end
+
+--Function timeToSeconds converts time from format YYYY-MM-DD HH:MM:SS (Domoticz format) to seconds
+function timeToSeconds (s)
+	year = string.sub(s, 1, 4)
+	month = string.sub(s, 6, 7)
+	day = string.sub(s, 9, 10)
+	hour = string.sub(s, 12, 13)
+	minutes = string.sub(s, 15, 16)
+	seconds = string.sub(s, 18, 19)
+	timeInSeconds = os.time{year=year, month=month, day=day, hour=hour, min=minutes, sec=seconds}
+	return timeInSeconds
+end
+
+function message (u)
+    if (time > lastMessageSent + MessageInterval) then
+        commandArray['SendNotification']=u
+        print('start ns')
+        os.execute ('aplay /home/pi/domoticz/ns_omroepsignaal.wav')
+        print('start message')
+        sleep(1)
+        print('/usr/local/bin/izsynth -e voicerss -v nl-nl -W 75 -t "' ..u ..'"')
+        os.execute ('/usr/local/bin/izsynth -e voicerss -v nl-nl -W 75 -t "' ..u ..'"')
+        sleep(5)
+        os.execute ('/usr/local/bin/izsynth -e voicerss -v nl-nl -W 75 -t "' ..u ..'"')
+    end
+    commandArray["Variable:RaamopenbijregenMessage"] = tostring(time) --Last message time is updated to RaamopenbijregenMessage variable
+end
+
+local clock = os.clock
+function sleep(n)  -- seconds
+  local t0 = clock()
+  while clock() - t0 <= n do end
+end
+
+--if debug then print("starting script_time_raamopenbijregen") end
+--Variables needed in the first place are initialized
+lastMessageSent = uservariables["RaamopenbijregenMessage"] --Time in system seconds when last message was sent
+
+time = os.time() --System time in seconds is stored to time variable
+
+commandArray = {}
+
+if (otherdevices['Rain Expected Levels'] ~= 'Droog' or test == 'On') then
+    if (otherdevices[DeviceName1] == 'Open' or test == 'On') then
+       message('Het dakraam in de slaapkamer staat open en het gaat regenen')
+    elseif (otherdevices[DeviceName2] == 'Open' or test == 'On') then
+       message('Het dakraam op zolder achter staat open en het gaat regenen')
+    end 
+end
+
+--if debug then print("completed script_time_slaapkamerdakraam") end
+return commandArray
+
