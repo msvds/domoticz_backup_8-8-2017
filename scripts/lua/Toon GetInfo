@@ -1,0 +1,99 @@
+-- Time script runs every minute, intended to sync Domoticz with Toon in case the value is changed on the physical device.
+-- Updates Toon Thermostat Sensor to value set on Toon
+-- Updates Toon Temperature Sensor to value set on Toon
+-- Updates Toon Scenes switch based on program set on Toon
+-- Updates Toon Auto Program switch to value set on Toon
+-- Updates Toon program information text to value set on Toon
+
+commandArray = {}
+
+    local ToonThermostatSensorName = uservariables['UV_ToonThermostatSensorName'] -- Sensor showing current setpoint
+    local ToonTemperatureSensorName = uservariables['UV_ToonTemperatureSensorName'] -- Sensor showing current room temperature
+    local ToonScenesSensorName  = uservariables['UV_ToonScenesSensorName'] -- Sensor showing current program
+    local ToonAutoProgramSensorName = uservariables['UV_ToonAutoProgramSensorName'] -- Sensor showing current auto program status
+    local ToonProgramInformationSensorName = uservariables['UV_ToonProgramInformationSensorName'] -- Sensor showing displaying program information status
+    local ToonIP = uservariables['UV_ToonIP']
+    local DomoticzIP = uservariables['UV_DomoticzIP']
+    local ToonProgramInformationSensorValue;
+
+    local json = assert(loadfile "/home/pi/domoticz/scripts/lua/JSON.lua")()  -- For Linux (LEDE)
+   
+    local handle = assert(io.popen(string.format('curl -m 5 http://%s/happ_thermstat?action=getThermostatInfo', ToonIP)))
+        local ThermostatInfo = handle:read('*all')
+    handle:close()
+   
+    local jsonThermostatInfo = json:decode(ThermostatInfo)
+   
+    if jsonThermostatInfo ~= nil then
+        local currentSetpoint = tonumber(jsonThermostatInfo.currentSetpoint) / 100
+        local currentTemperature = tonumber(jsonThermostatInfo.currentTemp) / 100
+        local currentProgramState = tonumber(jsonThermostatInfo.programState)
+        local currentActiveState = tonumber(jsonThermostatInfo.activeState)
+        local currentNextTime = jsonThermostatInfo.nextTime
+        local currentNextSetPoint = tonumber(jsonThermostatInfo.nextSetpoint) / 100
+   
+        if currentSetpoint ~= nil then 
+            -- Update the thermostat sensor to current setpoint
+            if otherdevices_svalues[ToonThermostatSensorName]*100 ~= currentSetpoint*100 then 
+                print('Toon GetInfo: Updating thermostat sensor to new set point: ' ..currentSetpoint)
+                commandArray[1] = {['Variable:UV_ToonChangedByDomoticz'] = '1'} -- Set variable changed to 1 to prevent script ToonSetPoint from shooting an event at Toon
+                commandArray[2] = {['UpdateDevice'] = string.format('%s|0|%s', otherdevices_idx[ToonThermostatSensorName], currentSetpoint)}
+            end
+        end
+   
+        if currentTemperature ~= nil then 
+            -- Update the temperature sensor to current room temperature
+            if otherdevices_svalues[ToonTemperatureSensorName]*100 ~= currentTemperature*100 then
+                print('Toon GetInfo: Updating the temperature sensor to new value: ' ..currentTemperature)
+                commandArray[3] = {['UpdateDevice'] = string.format('%s|0|%s', otherdevices_idx[ToonTemperatureSensorName], currentTemperature)}
+            end
+        end
+   
+        if currentActiveState ~= nil then 
+            -- Update the toon scene selector sensor to current program state
+            local CurrentToonScenesSensorValue = otherdevices_svalues[ToonScenesSensorName]
+   
+            if currentActiveState == -1 then currentActiveState = '50' -- Manual
+            elseif currentActiveState == 0 then currentActiveState = '40' -- Comfort
+            elseif currentActiveState == 1 then currentActiveState = '30' -- Home
+            elseif currentActiveState == 2 then currentActiveState = '20' -- Sleep
+            elseif currentActiveState == 3 then currentActiveState = '10' -- Away
+            end
+    
+            if CurrentToonScenesSensorValue ~= currentActiveState then  -- Update toon selector if it has changed
+                --print ('Updating Toon Scenes selector')
+                commandArray[4] = {['UpdateDevice'] = string.format('%s|1|%s', otherdevices_idx[ToonScenesSensorName], currentActiveState)}
+            end
+        end
+   
+        if currentProgramState ~= nil then 
+            -- Updates the toon auto program switch
+            local CurrentToonAutoProgramSensorValue = otherdevices_svalues[ToonAutoProgramSensorName]
+   
+           if currentProgramState == 0 then currentProgramState = '10' -- No
+            elseif currentProgramState == 1 then currentProgramState = '20' -- Yes
+            elseif currentProgramState == 2 then currentProgramState = '30' -- Temporary       
+            end
+   
+            if CurrentToonAutoProgramSensorValue ~= currentProgramState then -- Update toon auto program selector if it has changed
+                print ('Toon GetInfo: Updating Toon Auto Program selector')
+                commandArray[5] = {['UpdateDevice'] = string.format('%s|1|%s', otherdevices_idx[ToonAutoProgramSensorName], currentProgramState)}
+            end
+        end
+   
+        if currentNextTime ~= nil and currentNextSetPoint ~= nil then 
+            -- Updates the toon program information text box
+            local CurrentToomProgramInformationSensorValue = otherdevices_svalues[ToonProgramInformationSensorName]
+            if currentNextTime == 0 or currentNextSetPoint == 0 then
+                ToonProgramInformationSensorValue = 'Op ' ..currentSetpoint.. '°'
+            else
+                ToonProgramInformationSensorValue = 'Om ' ..os.date('%H:%M', currentNextTime).. ' op ' ..currentNextSetPoint.. '°'
+            end
+   
+            if CurrentToomProgramInformationSensorValue ~= ToonProgramInformationSensorValue then
+                commandArray[6] = {['UpdateDevice'] = string.format('%s|0|%s', otherdevices_idx[ToonProgramInformationSensorName], ToonProgramInformationSensorValue)}
+            end
+        end
+    end
+--
+return commandArray
