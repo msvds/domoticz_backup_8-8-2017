@@ -1,0 +1,29 @@
+-- script_time_tandenpoetsen.lua
+--------------------------------
+------ Variables to edit ------
+--------------------------------
+DeviceName = "Status" --Name of the device
+debug = false
+--------------------------------
+-- End of variables to edit --
+--------------------------------
+time = os.date("*t")
+
+--if debug then print("starting script_time_tandenpoetsen") end
+commandArray = {}
+if (otherdevices[DeviceName] == 'Normal') then
+    if (time.hour == 8) then
+        if (time.min < 3) then
+            if debug then print('script_time_tandenpoetsen: Bericht tandenpoetsen gesproken') end
+            os.execute ('/usr/local/bin/izsynth -e voicerss -v nl-nl -W 75 -t "Lars en Nienke, joehoe. Het is tijd om tanden te poetsen"')
+            os.execute ('/usr/local/bin/izsynth -e voicerss -v nl-nl -W 75 -t "Lars en Nienke, joehoe. Het is tijd om tanden te poetsen"')
+            --Calcvalue = (10007)
+            --commandArray['Variable:XiaomiMP3']=''..Calcvalue..''
+            --commandArray['Xiaomi Gateway Volume']='75'
+            --commandArray['Xiaomi Gateway MP3']='On'
+            --commandArray['Xiaomi Gateway Volume']='50'
+        end
+    end
+end
+--if debug then print("completed script_time_tandenpoetsen") end
+return commandArray
