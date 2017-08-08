@@ -1,0 +1,8 @@
+commandArray = {}
+if (devicechanged["Test Switch"] == 'On') then
+    os.execute ('/usr/local/bin/izsynth -e voicerss -v nl-nl -W 75 -t "Hoi lieve Suzanne, je bent geweldig"') 
+    commandArray["Test Switch"]='Off'
+end
+return commandArray
+
+ 
