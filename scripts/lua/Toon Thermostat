@@ -1,0 +1,22 @@
+-- Script used for Toon Thermostaat utility device, upon changing temp in Domoticz, temperature is sent to Toon. 
+--
+commandArray = {}
+
+    ToonThermostatSensorName = uservariables['UV_ToonThermostatSensorName'] -- Sensor showing current setpoint
+    ToonIP = uservariables['UV_ToonIP']
+    
+    for deviceName,deviceValue in pairs(devicechanged) do
+        if (deviceName == ToonThermostatSensorName) then
+            if uservariables['UV_ToonChangedByDomoticz'] == 1 then
+                commandArray['Variable:UV_ToonChangedByDomoticz'] = '0'
+            else
+                SetPoint = otherdevices_svalues[ToonThermostatSensorName]
+                ToonCommand = string.format('http://%s/happ_thermstat?action=setSetpoint&Setpoint=%s', ToonIP, SetPoint*100)
+                
+                print('Toon Thermostat: Setting Toon setpoint to '.. SetPoint)
+                commandArray['OpenURL'] = ToonCommand
+            end
+        end
+    end
+
+return commandArray
