@@ -1,0 +1,21 @@
+-- script_time_desktop_pc.lua
+--------------------------------
+------ Variables to edit ------
+--------------------------------
+debug = false
+--------------------------------
+-- End of variables to edit --
+--------------------------------
+
+commandArray = {}
+--if debug then print("starting script_time_desktop") end
+ping_success=os.execute('ping -c1 192.168.178.11')
+ if ping_success then
+   commandArray['Desktop PC']='On'
+   --print("Desktop PC is online")
+ else
+   commandArray['UpdateDevice']='74|0|0'
+   --print("Desktop PC is offline")
+ end
+--if debug then print("completed script_time_desktop") end
+return commandArray
