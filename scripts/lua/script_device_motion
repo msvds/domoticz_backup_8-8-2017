@@ -1,0 +1,27 @@
+-- script_device_motion.lua
+debug = true
+local motion_switch = 'Beweging woonkamer'
+local status_switch = 'SomeoneHome'
+local motion_uservar = 'motionCounter'
+
+--------------------------------
+-- End of variables to edit --
+--------------------------------
+ 
+commandArray = {}
+ 
+motion_minutes = tonumber(uservariables[motion_uservar])
+
+if devicechanged[motion_switch] then
+    if debug then print("otherdevices[motion_switch]: " ..otherdevices[motion_switch]) end
+    if debug then print("otherdevices[status_switch]: " ..otherdevices[status_switch]) end
+	if otherdevices[motion_switch] == 'On' then
+	    motion_minutes = motion_minutes + 1
+	    if debug then print("Motion has been detected for: " ..motion_minutes.. " minutes") end
+	    if otherdevices[status_switch] == 'Off' and motion_minutes > 5 then --change the 5 to the amount of minutes you prefer
+ 	        commandArray[status_switch]='On'
+        end
+ 	end
+end
+commandArray['Variable:' .. motion_uservar] = tostring(motion_minutes)
+return commandArray
