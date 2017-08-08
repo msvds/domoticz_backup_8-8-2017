@@ -1,0 +1,86 @@
+-- Counter for no motion
+-- Switch off when timeout is reached
+
+debug = true
+StatusName = "Status" --Name of the device
+DeviceName1 = "Media Center" --Name of the device
+DeviceName2 = "Televisie" --Name of the device
+DeviceName3 = "Televisie lage resolutie" --Name of the device
+commandArray = {}
+ 
+local switches = {
+    -- The Floor_0 is the variable name chosen earlier
+    Floor_0={
+        -- The detectors below can be anything that turns "On" when there's activity
+        detectors={
+            'Eetkamerdeur',
+            'Beweging woonkamer'
+        },
+        switches={
+            'Lamp boven TV',
+            'Lamp bank',
+            'Schemerlamp bank',
+            'Lamp spoelb keuken',
+            'Schemerlamp deur'
+        },
+        timeout=20
+    },
+    Floor_1={
+        detectors={
+            'Beweging kamer Lars',
+            'Balkondeur slaapkamer',
+            'Dakraam slaapkamer'
+        },
+        switches={
+        },
+        timeout=5
+    },
+    Floor_2={
+        detectors={
+            'Zolderdakraam achter'
+        },
+        switches={
+            'Lampen logeerkamer'
+        },
+        timeout=5
+    },
+    Outside_rear={
+        detectors={
+        },
+        switches={
+            'Lamp Garagedeur',
+            'Lamp Speelhuisje',
+            'Buiten Zijkant'
+        },
+        timeout=5
+    }
+}
+ 
+for variable,devices in pairs(switches) do
+    -- Increase the no motion counter
+    --if debug then print('variable = ' ..variable .. '; uservariables[variable] = ' ..tonumber(uservariables[variable])) end
+    local no_motion_minutes = tonumber(uservariables[variable]) + 1
+    local timeout = tonumber(devices['timeout'] or 5)
+    --if debug then print('no motion_minutes = ' ..no_motion_minutes) end
+    if debug then print('script_time_motiondetection: ' ..variable ..': No motion on for ' ..no_motion_minutes ..' minutes') end
+    --if debug then print('timeout = ' ..timeout) end
+    -- Store the no motion counter in the variable again
+    commandArray['Variable:' .. variable] = tostring(no_motion_minutes)
+ 
+    -- If we have reached the timeout, disable the linked switches
+    if(timeout <= no_motion_minutes) then
+        if debug then print('script_time_motiondetection: ' ..variable ..': timeout reached. Everything is turned off') end
+        for i, switch in ipairs(devices['switches']) do
+            if(variable == "Floor_0" and otherdevices[switch] ~= 'Off' and otherdevices[DeviceName1] == 'Off' and otherdevices[DeviceName2] == 'Off' and otherdevices[DeviceName3] == 'Off') then
+                if debug then print('script_time_motiondetection: switch ' ..switch .. ' turned off') end
+                commandArray[switch] = 'Off'
+            elseif(otherdevices[switch] == 'Off') then
+                if(otherdevices[StatusName] == 'Vakantie') then
+                    
+                end
+            end
+        end
+    end
+end
+ 
+return commandArray
