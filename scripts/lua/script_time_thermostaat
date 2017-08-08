@@ -1,0 +1,179 @@
+-- script_time_thermostaat.lua
+
+--------------------------------
+------ Variables to edit ------
+--------------------------------
+MessageInterval = 300 --Interval of sending email notifications
+test = otherdevices['Test Switch'] --perform test using test switch "Test Switch", On or Off
+debug = true
+StatusName = "Status" --Name of the device
+Temperature = "Temperatuur Buiten" --Name of the device
+Temperature_limit = '18' --Temperature limit above which the heating is switched off
+
+--ToonState = '50' -- Manual
+--ToonState = '40' -- Comfort
+--ToonState = '30' -- Home
+--ToonState = '20' -- Sleep
+--ToonState = '10' -- Away
+--------------------------------
+-- End of variables to edit --
+--------------------------------
+
+commandArray = {}
+
+function message (u)
+    if (time > lastMessageSent + MessageInterval) then
+        commandArray['SendNotification']=u
+        os.execute ('/usr/local/bin/izsynth -e voicerss -v nl-nl -W 75 -t ' ..u)
+    end
+    commandArray["Variable:ThermostaatMessage"] = tostring(time) --Last run time of the script is updated to Kamerplant1Message variable
+end
+
+function timedifference(s)
+   year = string.sub(s, 1, 4)
+   month = string.sub(s, 6, 7)
+   day = string.sub(s, 9, 10)
+   hour = string.sub(s, 12, 13)
+   minutes = string.sub(s, 15, 16)
+   seconds = string.sub(s, 18, 19)
+   t1 = os.time()
+   t2 = os.time{year=year, month=month, day=day, hour=hour, min=minutes, sec=seconds}
+   difference = os.difftime (t1, t2)
+   return difference
+end
+
+--Function timeToSeconds converts time from format YYYY-MM-DD HH:MM:SS (Domoticz format) to seconds
+function timeToSeconds (s)
+	year = string.sub(s, 1, 4)
+	month = string.sub(s, 6, 7)
+	day = string.sub(s, 9, 10)
+	hour = string.sub(s, 12, 13)
+	minutes = string.sub(s, 15, 16)
+	seconds = string.sub(s, 18, 19)
+	timeInSeconds = os.time{year=year, month=month, day=day, hour=hour, min=minutes, sec=seconds}
+	return timeInSeconds
+end
+
+--Function changeSetPoint
+function changeSetPoint (s,reason,sendmessage)
+    SetPoint = s
+    if currentSetpoint ~= SetPoint then
+        ToonCommand = string.format('http://%s/happ_thermstat?action=setSetpoint&Setpoint=%s', ToonIP, SetPoint*100)
+        commandArray['OpenURL'] = ToonCommand
+        if debug then print('script_time_thermostaat: Toon setpoint gezet naar '.. SetPoint .. reason) end
+        if sendmessage == true then
+            message('Toon setpoint gezet naar '.. SetPoint .. reason)
+        end
+    end
+end
+
+--if debug then print("starting script_time_thermostaat") end
+
+--Variables needed in the first place are initialized
+lastMessageSent = uservariables["ThermostaatMessage"] --Time in system seconds when last message was sent
+time = os.time() --System time in seconds is stored to time variable
+local ToonScenesSensorName  = uservariables['UV_ToonScenesSensorName'] -- Sensor showing current program
+ToonThermostatSensorName = uservariables['UV_ToonThermostatSensorName'] -- Sensor showing current setpoint
+ToonIP = uservariables['UV_ToonIP']
+
+local json = assert(loadfile "/home/pi/domoticz/scripts/lua/JSON.lua")()  -- For Linux (LEDE)
+
+local handle = assert(io.popen(string.format('curl -m 5 http://%s/happ_thermstat?action=getThermostatInfo', ToonIP)))
+local ThermostatInfo = handle:read('*all')
+handle:close()
+
+local jsonThermostatInfo = json:decode(ThermostatInfo)
+
+if jsonThermostatInfo ~= nil then
+    local currentSetpoint = tonumber(jsonThermostatInfo.currentSetpoint) / 100
+    local currentTemperature = tonumber(jsonThermostatInfo.currentTemp) / 100
+    local currentProgramState = tonumber(jsonThermostatInfo.programState)
+    local currentActiveState = tonumber(jsonThermostatInfo.activeState)
+    local currentNextTime = jsonThermostatInfo.nextTime
+    local currentNextSetPoint = tonumber(jsonThermostatInfo.nextSetpoint) / 100
+    if debug then print('script_time_thermostaat: Huidige programma Toon is '.. currentActiveState) end
+    if debug then print('script_time_thermostaat: Huidige setpoint is '.. currentSetpoint) end
+end
+
+local switches = {
+    Doors={
+        -- The detectors below can be anything that turns "On" when there's activity
+        detectors={
+            'Eetkamerdeur',
+            'Balkondeur slaapkamer'
+        },
+        timeout=5
+    },
+    Windows={
+        detectors={
+            'Dakraam slaapkamer',
+            'Zolderdakraam achter'
+        },
+        timeout=10
+    },
+    Motionsensors={
+        detectors={
+            'Beweging woonkamer',
+            'Beweging kamer Lars'
+        },
+        timeout=5
+    }
+}
+
+if otherdevices[Temperature] > Temperature_limit then
+    if debug then print('script_time_thermostaat: De buiten temperatuur is ' ..otherdevices[Temperature] .. ' graden') end
+    changeSetPoint('12',' omdat het buiten warmer is dan ' ..Temperature_limit .. ' graden',false)
+end
+                    
+                    
+for variable,devices in pairs(switches) do
+    -- Increase the no motion counter
+    --if debug then print('variable = ' ..variable .. '; uservariables[variable] = ' ..tonumber(uservariables[variable])) end
+    local no_change_minutes = tonumber(uservariables[variable]) + 1
+    local timeout = tonumber(devices['timeout'] or 5)
+    --if debug then print('no motion_minutes = ' ..no_change_minutes) end
+    if debug then print('script_time_thermostaat: ' ..variable ..': No change for ' ..no_change_minutes ..' minutes') end
+    --if debug then print('timeout = ' ..timeout) end
+    -- Store the no motion counter in the variable again
+    commandArray['Variable:' .. variable] = tostring(no_change_minutes)
+ 
+    -- If we have reached the timeout, disable the linked switches
+    if(timeout <= no_change_minutes) then
+        if debug then print('script_time_thermostaat: ' ..variable ..': timeout reached.') end
+        for i, detector in ipairs(devices['detectors']) do
+            if (device == 'Eetkamerdeur' and (deviceValue == 'Open' or test == 'On')) then
+                if debug then print('script_time_thermostaat: deviceValue ' ..deviceValue) end
+                changeSetPoint('12','omdat de eetkamerdeur open staat',true)
+            elseif (device == 'Balkondeur slaapkamer' and (deviceValue == 'Open' or test == 'On')) then
+                if debug then print('script_time_thermostaat: deviceValue ' ..deviceValue) end
+                changeSetPoint('12','omdat de balkondeur slaapkamer open staat',true)
+            elseif (device == 'Dakraam slaapkamer' and (deviceValue == 'Open' or test == 'On')) then
+                if debug then print('script_time_thermostaat: deviceValue ' ..deviceValue) end
+                changeSetPoint('12','omdat de dakraam slaapkamer open staat',true)
+            elseif (device == 'Zolderdakraam achter' and (deviceValue == 'Open' or test == 'On')) then
+                if debug then print('script_time_thermostaat: deviceValue ' ..deviceValue) end
+                changeSetPoint('12','omdat de zolderdakraam achter open staat',true)
+            elseif (device == 'Beweging woonkamer' and (deviceValue == 'Off' or test == 'On')) then
+                if (device == 'Beweging kamer Lars' and (deviceValue == 'Off' or test == 'On')) then
+                    if debug then print('script_time_thermostaat: deviceValue ' ..deviceValue) end
+                    changeSetPoint('12','omdat er niemand thuis lijkt te zijn',true)
+                end
+            end
+        end
+
+            --local CurrentToonScenesSensorValue = otherdevices_svalues[ToonScenesSensorName]
+            --if currentActiveState == -1 then currentActiveState = '50' -- Manual
+            --elseif currentActiveState == 0 then currentActiveState = '40' -- Comfort
+            --elseif currentActiveState == 1 then currentActiveState = '30' -- Home
+            --elseif currentActiveState == 2 then currentActiveState = '20' -- Sleep
+            --elseif currentActiveState == 3 then currentActiveState = '10' -- Away
+            --end
+            --
+            --commandArray[1] = {['UpdateDevice'] = string.format('%s|1|%s', otherdevices_idx[ToonScenesSensorName], '10')}
+            --if debug then print('Huidige programma Toon veranderd naar Away omdat de woonkamerdeur open staat') end
+            --if debug then print('Huidige setpoint is '.. currentSetpoint) end
+    end
+end
+--if debug then print("completed script_time_thermostaat") end
+return commandArray
+
