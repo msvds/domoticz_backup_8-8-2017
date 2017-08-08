@@ -1,0 +1,77 @@
+-- script_time_garagedoor.lua
+-- Own variable connectionLastRunTime (type: Int) is used to store time in system seconds when last notification email was sent
+
+--------------------------------
+------ Variables to edit ------
+--------------------------------
+MessageInterval = 300 --Interval of sending email notifications
+DeviceName = "Grote Garagedeur" --Name of the device
+debug = true
+test = otherdevices['Test Switch'] --perform test using test switch "Test Switch", On or Off
+--------------------------------
+-- End of variables to edit --
+--------------------------------
+
+function timedifference(s)
+   year = string.sub(s, 1, 4)
+   month = string.sub(s, 6, 7)
+   day = string.sub(s, 9, 10)
+   hour = string.sub(s, 12, 13)
+   minutes = string.sub(s, 15, 16)
+   seconds = string.sub(s, 18, 19)
+   t1 = os.time()
+   t2 = os.time{year=year, month=month, day=day, hour=hour, min=minutes, sec=seconds}
+   difference = os.difftime (t1, t2)
+   return difference
+end
+
+--Function timeToSeconds converts time from format YYYY-MM-DD HH:MM:SS (Domoticz format) to seconds
+function timeToSeconds (t)
+	year = string.sub(t, 1, 4)
+	month = string.sub(t, 6, 7)
+	day = string.sub(t, 9, 10)
+	hour = string.sub(t, 12, 13)
+	minutes = string.sub(t, 15, 16)
+	seconds = string.sub(t, 18, 19)
+	timeInSeconds = os.time{year=year, month=month, day=day, hour=hour, min=minutes, sec=seconds}
+	return timeInSeconds
+end
+
+function message (u)
+    if (time > lastMessageSent + MessageInterval) then
+        commandArray['SendNotification']=u
+    end
+    commandArray["Variable:GaragedeurMessage"] = tostring(time) --Last run time of the script is updated to GaragedeurMessage variable
+end
+
+time = os.time() --System time in seconds is stored to time variable
+commandArray = {}
+if debug then print("starting script_time_garagedoor") end
+if (debug) then
+    --print (otherdevices['IsDonker (virt)'])
+    print('IsDonker (virt) = ' ..otherdevices['IsDonker (virt)'])
+    print('Grote Garagedeur = ' ..otherdevices[DeviceName])
+end
+print('timedifference(otherdevices_lastupdate[DeviceName]) = ' ..timedifference(otherdevices_lastupdate[DeviceName]))
+lastMessageSent = uservariables["GaragedeurMessage"] --Time in system seconds when last message was sent
+
+if (otherdevices['IsDonker (virt)'] == 'Off' or test == 'On') then
+    if ((timedifference(otherdevices_lastupdate[DeviceName]) > 1200 and timedifference(otherdevices_lastupdate[DeviceName]) < 1250) or test == 'On') then
+        message("Garage deur alert#De garage deur staat al 20 minuten open!")
+    end
+    if (otherdevices[DeviceName] == 'Open' and timedifference(otherdevices_lastupdate[DeviceName]) > 1200 and timedifference(otherdevices_lastupdate[DeviceName]) < 1250) then
+       message("Garage deur alert#De garage deur staat al 20 minuten open!")
+    elseif (otherdevices[DeviceName] == 'Open' and timedifference(otherdevices_lastupdate[DeviceName]) > 2400 and timedifference(otherdevices_lastupdate[DeviceName]) < 2450) then
+       message("Garage deur alert#De garage deur staat al 40 minuten open!")
+    elseif (otherdevices[DeviceName] == 'Open' and timedifference(otherdevices_lastupdate[DeviceName]) > 3600 and timedifference(otherdevices_lastupdate[DeviceName]) < 3700) then
+       message("Garage deur alert#De garage deur staat al 1 uur open!")
+    elseif (otherdevices[DeviceName] == 'Open' and timedifference(otherdevices_lastupdate[DeviceName]) > 7200 and timedifference(otherdevices_lastupdate[DeviceName]) < 7300) then
+       message("Garage deur alert#De garage deur staat al 2 uur open!")
+    end 
+else
+    if (otherdevices[DeviceName] == 'Open' and timedifference(otherdevices_lastupdate[DeviceName]) > 300 and timedifference(otherdevices_lastupdate[DeviceName]) < 350) then
+       message("Garage deur alert#De garage deur staat al 5 minuten open terwijl het donker is!")
+    end
+end
+if debug then print("completed script_time_garagedoor") end
+return commandArray
