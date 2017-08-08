@@ -1,0 +1,152 @@
+-- Counters for motion, no motion, open and closed windows/doors
+debug = true
+commandArray = {}
+local status_switch = 'SomeoneHome'
+local no_motion_timeout
+local motion_timeout
+local closed_timeout
+local open_timeout
+local motion_minutes1 = 0
+local motion_minutes2 = 0
+local no_motion_minutes1 = 0
+local no_motion_minutes2 = 0
+local open_minutes1= 0
+local open_minutes2= 0
+local open_minutes3= 0
+local open_minutes4= 0
+local closed_minutes1= 0
+local closed_minutes2= 0
+local closed_minutes3= 0
+local closed_minutes4= 0
+MotionDeviceName1 = 'Beweging woonkamer'
+MotionDeviceName2 = 'Beweging kamer Lars'
+NoMotionCounterVar1 = 'Counter_NoMotion_LivingRoom'
+MotionCounterVar1 = 'Counter_Motion_LivingRoom'
+NoMotionCounterVar2 = 'Counter_NoMotion_RoomLars'
+MotionCounterVar2 = 'Counter_Motion_RoomLars'
+
+DoorWindowDeviceName1 = 'Eetkamerdeur'
+DoorWindowOpenCounterVar1 = 'Counter_Open_DiningRoomDoor'
+DoorWindowClosedCounterVar1 = 'Counter_Closed_DiningRoomDoor'
+DoorWindowDeviceName2 = 'Dakraam slaapkamer'
+DoorWindowOpenCounterVar2 = 'Counter_Open_MasterBedroomWindow'
+DoorWindowClosedCounterVar2 = 'Counter_Closed_MasterBedroomWindow'
+DoorWindowDeviceName3 = 'Balkondeur slaapkamer'
+DoorWindowOpenCounterVar3 = 'Counter_Open_MasterBedroomBalkonyDoor'
+DoorWindowClosedCounterVar3 = 'Counter_Closed_MasterBedroomBalkonyDoor'
+DoorWindowDeviceName4 = 'Zolderdakraam achter'
+DoorWindowOpenCounterVar4 = 'Counter_Open_RearAtticWindow'
+DoorWindowClosedCounterVar4 = 'Counter_Closed_RearAtticWindow'
+Timeout_NoMotion = 30
+Timeout_Motion = 1
+
+-- loop through all the devices
+for deviceName,deviceValue in pairs(otherdevices) do
+    if (deviceName==MotionDeviceName1) then
+        if deviceValue == "On" then
+            motion_minutes1 = tonumber(uservariables[MotionCounterVar1]) + 1
+            if debug then print('script_time_detectors: ' ..MotionDeviceName1.. ' voor ' ..tostring(motion_minutes1) ..' minuten') end
+            commandArray['Variable:' .. MotionCounterVar1] = tostring(motion_minutes1)
+        elseif deviceValue == "Off" then
+            no_motion_minutes1 = tonumber(uservariables[NoMotionCounterVar1]) + 1
+            if debug then print('script_time_detectors: Geen '.. MotionDeviceName1.. ' voor ' ..tostring(no_motion_minutes1) ..' minuten') end
+            commandArray['Variable:' .. NoMotionCounterVar1] = tostring(no_motion_minutes1)
+        end
+    elseif (deviceName==MotionDeviceName2) then
+        if deviceValue == "On" then
+            motion_minutes2 = tonumber(uservariables[MotionCounterVar2]) + 1
+            if debug then print('script_time_detectors: ' ..MotionDeviceName2.. ' voor ' ..tostring(motion_minutes2) ..' minuten') end
+            commandArray['Variable:' .. MotionCounterVar2] = tostring(motion_minutes2)
+        elseif deviceValue == "Off" then
+            no_motion_minutes2 = tonumber(uservariables[NoMotionCounterVar2]) + 1
+            if debug then print('script_time_detectors: Geen '.. MotionDeviceName2.. ' voor ' ..tostring(no_motion_minutes2) ..' minuten') end
+            commandArray['Variable:' .. NoMotionCounterVar2] = tostring(no_motion_minutes2)
+        end
+    elseif (deviceName==DoorWindowDeviceName1) then
+        if deviceValue == "Open" then
+            open_minutes1 = tonumber(uservariables[DoorWindowOpenCounterVar1]) + 1
+            if debug then print('script_time_detectors: ' ..DoorWindowDeviceName1.. ' open voor ' ..tostring(open_minutes1) ..' minuten') end
+            commandArray['Variable:' .. DoorWindowOpenCounterVar1] = tostring(open_minutes1)
+        elseif deviceValue == "Closed" then
+            closed_minutes1 = tonumber(uservariables[DoorWindowClosedCounterVar1]) + 1
+            if debug then print('script_time_detectors: ' ..DoorWindowDeviceName1.. ' dicht voor ' ..tostring(closed_minutes1) ..' minuten') end
+            commandArray['Variable:' .. DoorWindowClosedCounterVar1] = tostring(closed_minutes1)
+        end
+    elseif (deviceName==DoorWindowDeviceName2) then
+        if deviceValue == "Open" then
+            open_minutes2 = tonumber(uservariables[DoorWindowOpenCounterVar2]) + 1
+            if debug then print('script_time_detectors: ' ..DoorWindowDeviceName2.. ' open voor ' ..tostring(open_minutes2) ..' minuten') end
+            commandArray['Variable:' .. DoorWindowOpenCounterVar2] = tostring(open_minutes2)
+        elseif deviceValue == "Closed" then
+            closed_minutes2 = tonumber(uservariables[DoorWindowClosedCounterVar2]) + 1
+            if debug then print('script_time_detectors: ' ..DoorWindowDeviceName2.. ' dicht voor ' ..tostring(closed_minutes2) ..' minuten') end
+            commandArray['Variable:' .. DoorWindowClosedCounterVar2] = tostring(closed_minutes2)
+        end
+    elseif (deviceName==DoorWindowDeviceName3) then
+        if deviceValue == "Open" then
+            open_minutes3 = tonumber(uservariables[DoorWindowOpenCounterVar3]) + 1
+            if debug then print('script_time_detectors: ' ..DoorWindowDeviceName3.. ' open voor ' ..tostring(open_minutes3) ..' minuten') end
+            commandArray['Variable:' .. DoorWindowOpenCounterVar3] = tostring(open_minutes3)
+        elseif deviceValue == "Closed" then
+            closed_minutes3 = tonumber(uservariables[DoorWindowClosedCounterVar3]) + 1
+            if debug then print('script_time_detectors: ' ..DoorWindowDeviceName3.. ' dicht voor ' ..tostring(closed_minutes3) ..' minuten') end
+            commandArray['Variable:' .. DoorWindowClosedCounterVar3] = tostring(closed_minutes3)
+        end
+    elseif (deviceName==DoorWindowDeviceName4) then
+        if deviceValue == "Open" then
+            open_minutes4 = tonumber(uservariables[DoorWindowOpenCounterVar4]) + 1
+            if debug then print('script_time_detectors: ' ..DoorWindowDeviceName4.. ' open voor ' ..tostring(open_minutes4) ..' minuten') end
+            commandArray['Variable:' .. DoorWindowOpenCounterVar4] = tostring(open_minutes4)
+        elseif deviceValue == "Closed" then
+            closed_minutes4 = tonumber(uservariables[DoorWindowClosedCounterVar4]) + 1
+            if debug then print('script_time_detectors: ' ..DoorWindowDeviceName4.. ' dicht voor ' ..tostring(closed_minutes4) ..' minuten') end
+            commandArray['Variable:' .. DoorWindowClosedCounterVar4] = tostring(closed_minutes4)
+        end
+    end
+end
+
+if no_motion_minutes1 > Timeout_NoMotion and no_motion_minutes2 > Timeout_NoMotion then
+    no_motion_timeout = true
+else
+    no_motion_timeout = false    
+end
+if motion_minutes1 > Timeout_Motion or motion_minutes2 > Timeout_Motion then
+    motion_timeout = true
+else
+    motion_timeout = false    
+end
+--if open_minutes1 > Timeout or open_minutes2 > Timeout or open_minutes3 > Timeout or open_minutes4 > Timeout then
+--    open_timeout = true
+--else
+--    open_timeout = false
+--end
+--if closed_minutes1 > Timeout and closed_minutes2 > Timeout and closed_minutes3 > Timeout and closed_minutes4 > Timeout then
+--    closed_timeout = true
+--else
+--    closed_timeout = false
+--end
+if debug then print('script_time_detectors: no_motion_timeout = ' ..tostring(no_motion_timeout)) end
+if debug then print('script_time_detectors: no_motion_minutes1 = ' ..tostring(no_motion_minutes1)) end
+if debug then print('script_time_detectors: no_motion_minutes2 = ' ..tostring(no_motion_minutes2)) end
+if debug then print('script_time_detectors: motion_timeout = ' ..tostring(motion_timeout)) end
+if debug then print('script_time_detectors: motion_minutes1 = ' ..tostring(motion_minutes1)) end
+if debug then print('script_time_detectors: motion_minutes2 = ' ..tostring(motion_minutes2)) end
+--if debug then print('open_timeout = ' ..tostring(open_timeout)) end
+--if debug then print('closed_timeout = ' ..tostring(closed_timeout)) end
+if otherdevices[status_switch] == 'On' and no_motion_timeout == true then --change the 30 to the amount of minutes you prefer
+ 	commandArray[status_switch]='Off' 
+ 	if closed_timeout == true then
+ 	   if debug then print('script_time_detectors: Geen beweging in huis en alles is dicht voor ' ..tostring(Timeout) ..' minuten, status SomeoneHome = Off') end
+    elseif open_timeout == true then --change the 30 to the amount of minutes you prefer
+ 	    if debug then print('script_time_detectors: Geen beweging in huis, maar er staat iets open voor ' ..tostring(Timeout) ..' minuten, status SomeoneHome = Off') end
+ 	end
+elseif otherdevices[status_switch] == 'Off' and no_motion_timeout == false and motion_timeout == true then
+    if debug then print('script_time_detectors: Beweging in huis, status SomeoneHome = On') end 
+    commandArray[status_switch]='On'
+end
+
+return commandArray
+
+
+ 
+
