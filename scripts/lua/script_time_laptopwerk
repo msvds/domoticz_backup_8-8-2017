@@ -1,0 +1,21 @@
+-- script_time_laptopwerk.lua
+--------------------------------
+------ Variables to edit ------
+--------------------------------
+debug = false
+--------------------------------
+-- End of variables to edit --
+--------------------------------
+
+commandArray = {}
+--if debug then print("starting script_time_laptopwerk") end
+ping_success=os.execute('ping -c1 192.168.178.12')
+ if ping_success then
+   commandArray['Laptop werk']='On'
+   --print("Laptop werk is online")
+ else
+   commandArray['UpdateDevice']='75|0|0'
+   --print("Laptop werk is offline")
+ end
+--if debug then print("completed script_time_laptopwerk") end
+return commandArray
