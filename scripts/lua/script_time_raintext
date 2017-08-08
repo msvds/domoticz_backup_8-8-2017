@@ -1,0 +1,68 @@
+local RainTextIDX = 89 -- your domoticz virtual TEXT device (add virtual text device first, if you didnt do this allready and use its idx)
+debug = false -- enable or disable debug output
+tempfilename = '/var/tmp/rain.tmp' -- be sure this is in the correct map, and give it chmod 0666
+totalrain = 0
+rainlines = 0
+ 
+function IsItGonnaRain( minutesinfuture )
+   url='http://gadgets.buienradar.nl/data/raintext/?lat=51.65&lon=4.59' -- NOTE: lat and lon should have max 2 decimals after comma to function (requirement Buienrader)
+   --if debug then print(url) end
+   read = os.execute('curl -s -o '..tempfilename..' "'..url..'"')
+   file = io.open(tempfilename, "r")
+ 
+   while true do 
+      line = file:read("*line")
+      if not line then break end
+      --if debug then print('script_time_raintext: Line:'..line) end
+      linetime=string.sub(tostring(line), 5, 9)
+      --if debug then print('script_time_raintext: Linetime: '..linetime) end
+ 
+      linetime2 = os.time{year=os.date('%Y'), month=os.date('%m'), day=os.date('%d'), hour=string.sub(linetime,1,2), min=string.sub(linetime,4,5), sec=os.date('%S')}
+      difference = os.difftime (linetime2,os.time())
+ 
+      if ((difference > 0) and (difference<=minutesinfuture*60)) then
+         --if debug then print('script_time_raintext: Line in time range found') end
+         rain=tonumber(string.sub(tostring(line), 0, 3))
+         totalrain = totalrain+rain
+         rainlines=rainlines+1
+         --if debug then print('script_time_raintext: Rain in timerange: '..rain) end
+         --if debug then print('script_time_raintext: Total rain now: '..totalrain) end
+         --if debug then print('script_time_raintext: Rainlines: '..rainlines) end
+      end
+ 
+   end
+   file:close()
+ 
+   averagerain=totalrain/rainlines
+   --if debug then print('script_time_raintext: Averagerain: '..averagerain) end
+   return(averagerain)
+end
+ 
+function round(num, idp)
+   local mult = 10^(idp or 0)
+   return math.floor(num * mult + 0.5) / mult
+end
+
+
+if debug then print("starting script_time_raintext") end
+
+commandArray = {}
+   minuten=60
+   RainPrediction = IsItGonnaRain(minuten)
+   if debug then print('script_time_raintext: RainPrediction: '..RainPrediction) end
+   RainmmHour=10^((RainPrediction-109)/32)
+   if debug then print('script_time_raintext: RainmmHour: '..RainmmHour) end
+   if debug then print('script_time_raintext: RainPredictionText: ('..round(RainmmHour, 5)..' mm) regen verwacht!') end
+   if (RainPrediction > 5  ) then
+      verw = 3
+      if debug then print('script_time_raintext: verw: '..verw) end
+      RainPredictionText=('('..round(RainmmHour, 5)..' mm) regen verwacht!')
+   else 
+      verw = 2
+      RainPredictionText=('Voorlopig blijft het droog!')
+   end
+   commandArray[2] = {['UpdateDevice'] = RainTextIDX .. '|0|' .. tostring(RainPredictionText)}
+ 
+ 
+if debug then print("completed script_time_raintext") end
+return commandArray
