@@ -1,0 +1,14 @@
+--script_device_Xiaomimp3.lua
+--as each sound is recorded as 100+xx value the slider will update user variable to 10000+dimmer value and play sound
+commandArray = {}
+if devicechanged['Xiaomi MP3 Selector'] then
+      DomValue = otherdevices_svalues['Xiaomi MP3 Selector'];
+       NumericValue = tonumber(DomValue)
+            Calcvalue = (NumericValue + 10000)
+ 
+    commandArray['Variable:XiaomiMP3']=''..Calcvalue..''
+    print('Xiaomi Gateway will play sound stored on bank '..Calcvalue)
+    commandArray['Xiaomi Gateway MP3']='On'
+ 
+end
+return commandArray
