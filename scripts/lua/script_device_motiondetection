@@ -1,0 +1,97 @@
+-- when motion is detected, the actions are set here
+--------------------------------
+------ Variables to edit ------
+--------------------------------
+DeviceName = "IsDonker (virt)" --Name of the device
+debug = true
+--------------------------------
+-- End of variables to edit --
+--------------------------------
+
+commandArray = {}
+ 
+local switches = {
+    -- The Floor_0 is the variable name chosen earlier
+    Floor_0={
+        -- The detectors below can be anything that turns "On" when there's activity
+        detectors={
+            'Eetkamerdeur',
+            'Beweging woonkamer'
+        },
+        switches={
+            'Lamp boven TV',
+            'Lamp bank',
+            'Schemerlamp bank',
+            'Lamp spoelb keuken',
+            'Schemerlamp deur'
+        },
+        timeout=20
+    },
+    Floor_1={
+        detectors={
+            'Beweging kamer Lars',
+            'Balkondeur slaapkamer',
+            'Dakraam slaapkamer'
+        },
+        switches={
+        },
+        timeout=5
+    },
+    Floor_2={
+        detectors={
+            'Zolderdakraam achter'
+        },
+        --switches={
+        --    'Lampen logeerkamer'
+        --},
+        timeout=5
+    },
+    Outside_rear={
+        detectors={
+        },
+        switches={
+            'Lamp Garagedeur',
+            'Lamp Speelhuisje',
+            'Buiten Zijkant'
+        },
+        timeout=5
+    }
+}
+ 
+   
+-- Loop through all the changed devices sent by the trigger
+for deviceName,deviceValue in pairs(devicechanged) do
+ 
+    for variable,devices in pairs(switches) do
+        local status = 0
+        for i, detector in ipairs(devices['detectors']) do
+            -- Check if it is one of the detectors and is set to "On"
+            if detector == deviceName and (deviceValue == 'On' or deviceValue == 'Open') then
+                if debug then print('script_device_motiondetection: deviceName ' ..deviceName) end
+                if debug then print('script_device_motiondetection: deviceValue ' ..deviceValue) end
+                if debug then print('script_device_motiondetection: status ' ..status) end
+                status = 1
+                break
+            end
+        end
+ 
+        -- If one of the sensors was turned on, enable the light and reset the no motion variable
+        if status == 1 then
+            if debug then print('script_device_motiondetection: Variable:' .. variable) end
+            commandArray['Variable:' .. variable] = tostring(0)
+            for i, switch in ipairs(devices['switches']) do
+                if(otherdevices[switch] == 'Off') then
+                    if otherdevices[DeviceName] == 'On' then
+                        if debug then print('script_device_motiondetection: switch ' ..switch .. ' turned on') end
+                        commandArray[switch] = 'On'
+                        os.execute ('/usr/local/bin/izsynth -e voicerss -v nl-nl -W 75 -t "De schakelaar ' ..switch .. " heb ik aangezet'" )
+                    elseif otherdevices[DeviceName] == 'Off' then
+                        if debug then print('script_device_motiondetection: switch ' ..switch .. ' not turned on because it is not dark') end
+                    end
+                end
+            end
+        end
+    end
+end
+ 
+return commandArray
