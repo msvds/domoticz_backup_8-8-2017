@@ -1,0 +1,102 @@
+week    = tonumber (os.date( "%V"))
+dag      = tostring(os.date("%a"));
+status   = tonumber(otherdevices_svalues['Afval'])
+--print('script bin_selector executed')
+
+commandArray = {}
+--print ('Dag=  '..dag)
+if (dag=='Sat' or dag=='Sun'  ) then
+   weekend = true; weekdag = false
+end 
+
+if (dag=='Mon' or dag=='Tue' or dag=='Wed' or dag=='Thu' or dag=='Fri') then
+   weekend = false ; weekdag = true 
+end
+
+morgenpapier = false; papier = false; morgenplastic = false; plastic = false; morgengrijs = false; grijs = false
+
+--Bepalen morgen papier   
+if(week==20 and dag=='Fri' or week==24 and dag=='Fri' or week==28 and dag=='Fri' or week==33 and dag=='Fri' or week==37 and dag=='Fri' or week==42 and dag=='Fri' or week==46 and dag=='Fri' or week==50 and dag=='Fri') then
+      morgenpapier = true; papier = false; morgenplastic = false; plastic = false; niets = false
+--print ('morgen papier')
+end
+
+--Bepalen papier   
+if(week==20 and dag=='Sat' or week==24 and dag=='Sat' or week==28 and dag=='Sat' or week==33 and dag=='Sat' or week==37 and dag=='Sat' or week==42 and dag=='Sat' or week==46 and dag=='Sat' or week==50 and dag=='Sat') then
+      morgenpapier = false; papier = true; morgenplastic = false; plastic = false; niets = false
+--print ('vandaag papier')
+end
+
+--Bepalen morgen plastic     
+if(week==19 and dag=='Tue' or week==21 and dag=='Tue' or week==23 and dag=='Tue' or week==25 and dag=='Tue' or week==27 and dag=='Tue' or week==29 and dag=='Tue' or week==31 and dag=='Tue' or week==33 and dag=='Tue' or week==35 and dag=='Tue' or week==37 and dag=='Tue' or week==39 and dag=='Tue' or week==41 and dag=='Tue' or week==43 and dag=='Tue' or week==45 and dag=='Tue' or week==47 and dag=='Tue' or week==49 and dag=='Tue' or week==51 and dag=='Tue') then
+      morgenpapier = false; papier = false; morgenplastic = true; plastic = false; niets = false
+--print ('morgen plastic')
+end
+
+--Bepalen plastic     
+if(week==19 and dag=='Wed' or week==21 and dag=='Wed' or week==23 and dag=='Wed' or week==25 and dag=='Wed' or week==27 and dag=='Wed' or week==29 and dag=='Wed' or week==31 and dag=='Wed' or week==33 and dag=='Wed' or week==35 and dag=='Wed' or week==37 and dag=='Wed' or week==39 and dag=='Wed' or week==41 and dag=='Wed' or week==43 and dag=='Wed' or week==45 and dag=='Wed' or week==47 and dag=='Wed' or week==49 and dag=='Wed' or week==51 and dag=='Wed') then
+      morgenpapier = false; papier = false; morgenplastic = false; plastic = true; niets = false
+--print ('vandaag plastic')
+end
+
+--Bepalen morgen grijs  
+if(dag=='Mon') then
+      morgenpapier = false; papier = false; morgenplastic = false; plastic = false; morgengrijs = true; grijs = false; niets = false
+--print ('morgen rest&gft')
+end
+
+--Bepalen grijs 
+if(dag=='Tue') then
+      morgenpapier = false; papier = false; morgenplastic = false; plastic = false; morgengrijs = false; grijs = true; niets = false
+--print ('vandaag rest&gft')
+end
+
+--Geen afval aan de weg    
+if (morgenpapier == false and papier == false and morgenplastic == false and plastic == false and morgengrijs == false and grijs == false) then
+      niets = true
+--print ('vandaag geen afval buiten zetten')
+end
+
+if (niets and weekdag and status~=10) then
+--print ('not papier not plastic - status 10')
+      status=10
+      commandArray ['UpdateDevice']= '73|1|'     .. status      
+end 
+
+if (morgenpapier and weekdag and dag and status~=20) then
+--print ('morgen papier and weekdag - status 20')
+      status=20
+      commandArray ['UpdateDevice']= '73|1|' .. status
+end 
+
+if (papier and weekdag and dag and status~=30) then
+--print ('papier and weekdag - status 30')
+      status=30
+      commandArray ['UpdateDevice']= '73|1|' .. status
+end
+
+if (morgenplastic and weekdag and dag and status~=40) then
+--print ('morgen plastic and weekdag - status 40')
+      status=40
+      commandArray ['UpdateDevice']= '73|1|' .. status
+end 
+
+if (plastic and weekdag and dag and status~=50) then
+--print ('plastic and weekdag - status 50')
+      status=50
+      commandArray ['UpdateDevice']= '73|1|' .. status
+end
+
+if (morgengrijs and weekdag and dag and status~=60) then
+--print ('morgen grijs and weekdag - status 60')
+      status=60
+      commandArray ['UpdateDevice']= '73|1|' .. status
+end
+
+if (grijs and weekdag and dag and status~=70) then
+--print ('grijs and weekdag - status 70')
+      status=70
+      commandArray ['UpdateDevice']= '73|1|' .. status
+end
+
+return commandArray
