@@ -1,0 +1,61 @@
+--------------------------------
+------ Variables to edit ------
+--------------------------------
+MessageInterval = 3600 --Interval of sending email notifications
+runInterval = 86400 --runInterval determines how often this script will run. Default 3600s (1h)
+DeviceName = "plant moisture 1" --Name of the device
+DeviceName2 = "Status" --Name of the device
+debug = false
+test = otherdevices['Test Switch'] --perform test using test switch "Test Switch", On or Off
+--------------------------------
+-- End of variables to edit --
+--------------------------------
+
+function timedifference(s)
+   year = string.sub(s, 1, 4)
+   month = string.sub(s, 6, 7)
+   day = string.sub(s, 9, 10)
+   hour = string.sub(s, 12, 13)
+   minutes = string.sub(s, 15, 16)
+   seconds = string.sub(s, 18, 19)
+   t1 = os.time()
+   t2 = os.time{year=year, month=month, day=day, hour=hour, min=minutes, sec=seconds}
+   difference = os.difftime (t1, t2)
+   return difference
+end
+
+--Function timeToSeconds converts time from format YYYY-MM-DD HH:MM:SS (Domoticz format) to seconds
+function timeToSeconds (s)
+	year = string.sub(s, 1, 4)
+	month = string.sub(s, 6, 7)
+	day = string.sub(s, 9, 10)
+	hour = string.sub(s, 12, 13)
+	minutes = string.sub(s, 15, 16)
+	seconds = string.sub(s, 18, 19)
+	timeInSeconds = os.time{year=year, month=month, day=day, hour=hour, min=minutes, sec=seconds}
+	return timeInSeconds
+end
+
+function message (u)
+    if (time > lastMessageSent + MessageInterval) then
+        commandArray['SendNotification']=u
+    end
+    commandArray["Variable:Kamerplant1Message"] = tostring(time) --Last run time of the script is updated to Kamerplant1Message variable
+end
+if debug then print("starting script_time_kamerplant1") end
+
+--Variables needed in the first place are initialized
+lastRunTime = uservariables["Kamerplant1LastRunTime"] --Time in system seconds when script ran last time
+lastMessageSent = uservariables["Kamerplant1Message"] --Time in system seconds when last message was sent
+if (otherdevices[DeviceName2] == 'Normal' and (time > lastRunTime + runInterval or test == 'On')) then
+	print("script_time_kamerplant1 script running...")
+	commandArray["Variable:Kamerplant1LastRunTime"] = tostring(time) --Last run time of the script is updated to Kamerplant1Message variable
+    if (tonumber(otherdevices[DeviceName]) < 35  or test == 'On') then
+        message("De plant in de hal boven begint een beetje droog te worden (<35%)")
+    elseif (tonumber(otherdevices[DeviceName]) < 30) then
+        message("De plant in de hal boven begint droog te worden (<30%)")
+    end
+end
+
+
+if debug then print("starting script_time_raamopenbijregen") end
