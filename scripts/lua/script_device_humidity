@@ -1,0 +1,39 @@
+-- when motion, no motion, open or closed windows/door are detected, the counters are set to 0 here
+debug = true
+commandArray = {}
+HumidityDeviceName1 = 'Vochtigheid Woonkamer'
+HumidityDeviceName2 = 'Vochtigheid Kamer Lars'
+HumidityDeviceName3 = 'Vochtigheid Buiten'
+test = otherdevices['Test Switch'] --perform test using test switch "Test Switch", On or Off
+MessageInterval = 3600 --Interval of sending email notifications
+
+function message (u)
+    if (time > lastMessageSent + MessageInterval) then
+        commandArray['SendNotification']=u
+        os.execute ('/usr/local/bin/izsynth -e voicerss -v nl-nl -W 75 -t ' ..u)
+        os.execute ('/usr/local/bin/izsynth -e voicerss -v nl-nl -W 75 -t ' ..u)
+    end
+    commandArray["Variable:HumidityMessage"] = tostring(time) --Last run time of the script is updated to Kamerplant1Message variable
+end
+
+--if debug then print("starting script_time_humidity") end
+
+--Variables needed in the first place are initialized
+lastMessageSent = uservariables["HumidityMessage"] --Time in system seconds when last message was sent
+-- Loop through all the changed devices sent by the trigger
+for deviceName,deviceValue in pairs(devicechanged) do
+    if (deviceName==HumidityDeviceName1) then
+        if ((tonumber(deviceValue) > 65  and tonumber(deviceValue) > tonumber(otherdevices[HumidityDeviceName3])) or test == 'On') then
+            if debug then print("script_device_humidity: De " ..deviceName .. " begint hoog te worden, namelijk hoger dan 65%. Buiten is de vochtigheid lager, namelijk " ..tonumber(otherdevices[HumidityDeviceName3]) .." dus een raampje open zetten kan helpen.") end
+            message("De " ..deviceName .. " begint hoog te worden, namelijk hoger dan 65%. Buiten is de vochtigheid lager, namelijk " ..tonumber(otherdevices[HumidityDeviceName3]) .." dus een raampje open zetten kan helpen.")
+        elseif ((tonumber(deviceValue) > 60  and tonumber(deviceValue) > tonumber(otherdevices[HumidityDeviceName3])) or test == 'On') then
+            if debug then print("script_device_humidity: De " ..deviceName .. " begint hoog te worden, namelijk hoger dan 60%. Buiten is de vochtigheid lager, namelijk " ..tonumber(otherdevices[HumidityDeviceName3]) .." dus een raampje open zetten kan helpen.") end
+            message("De " ..deviceName .. " begint hoog te worden, namelijk hoger dan 60%. Buiten is de vochtigheid lager, namelijk " ..tonumber(otherdevices[HumidityDeviceName3]) .." dus een raampje open zetten kan helpen.")
+        elseif ((tonumber(deviceValue) > 60  and tonumber(deviceValue) < tonumber(otherdevices[HumidityDeviceName3])) or test == 'On') then
+            if debug then print("script_device_humidity: De " ..deviceName .. " begint hoog te worden, namelijk hoger dan 60%. Buiten is de vochtigheid hoger, namelijk " ..tonumber(otherdevices[HumidityDeviceName3]) .." dus een raampje open zetten helpt helaas niet.") end
+            message("De " ..deviceName .. " begint hoog te worden, namelijk hoger dan 60%. Buiten is de vochtigheid hoger, namelijk " ..tonumber(otherdevices[HumidityDeviceName3]) .." dus een raampje open zetten helpt helaas niet.")
+        end
+    end
+end
+
+return commandArray
