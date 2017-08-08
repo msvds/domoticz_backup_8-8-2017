@@ -1,0 +1,31 @@
+--script_device_draadlozeswitch1.lua
+DeviceName = "Draadloze switch 1" --Name of the device
+LightsName1 = "Lamp boven TV" --Name of the device
+LightsName2 = "Lamp spoelb keuken" --Name of the device
+LightsName3 = "Lamp bank" --Name of the device
+LightsName4 = "Schemerlamp bank" --Name of the device
+LightsName5 = "Schemerlamp deur" --Name of the device
+Harmony1 = "Harmony PowerOff" --Name of the device
+Harmony2 = "Radio" --Name of the device
+
+commandArray = {}
+if devicechanged[DeviceName] then
+    if otherdevices[DeviceName] == 'Long Click' then
+        commandArray[LightsName1]='On'
+        commandArray[LightsName2]='On'
+        commandArray[LightsName3]='On'
+        commandArray[LightsName4]='On'
+        commandArray[LightsName5]='On'
+    elseif otherdevices[DeviceName] == 'Click' then
+        commandArray[LightsName1]='Off'
+        commandArray[LightsName2]='Off'
+        commandArray[LightsName3]='Off'
+        commandArray[LightsName4]='Off'
+        commandArray[LightsName5]='Off'
+        commandArray[Harmony1]='On'
+        os.execute ('/usr/local/bin/izsynth -e voicerss -v nl-nl -W 75 -t "Alles is uitgeschakeld. Moet er nog een broodje gebakken worden? Weltrusten alvast!"') 
+    elseif otherdevices[DeviceName] == 'Double Click' then
+        commandArray[Harmony2]='On'
+    end
+end
+return commandArray
