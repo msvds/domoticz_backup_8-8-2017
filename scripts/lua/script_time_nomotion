@@ -1,0 +1,35 @@
+-- script_time_nomotion.lua
+--------------------------------
+------ Variables to edit ------
+--------------------------------
+debug = true
+test = otherdevices['Test Switch'] --perform test using test switch "Test Switch", On or Off
+local motion_switch = 'Beweging woonkamer'
+local nomotion_uservar = 'nomotionCounter'
+local status_switch = 'SomeoneHome'
+--------------------------------
+-- End of variables to edit --
+--------------------------------
+
+ 
+commandArray = {}
+ 
+no_motion_minutes = tonumber(uservariables[nomotion_uservar])
+
+if debug then print("starting script_time_nomotion") end
+if debug then print("otherdevices[motion_switch]: " ..otherdevices[motion_switch]) end
+if (otherdevices[motion_switch] == 'Off') then
+	no_motion_minutes = no_motion_minutes + 1
+	if debug then print("No motion has been detected for: " ..no_motion_minutes.. " minutes") end
+	--print('<font color="red">No motion has been detected for: ' ..no_motion_minutes.. ' minutes</font>')
+else 
+	no_motion_minutes = 0	
+end 
+ 
+commandArray['Variable:' .. nomotion_uservar] = tostring(no_motion_minutes)
+ 
+if otherdevices[status_switch] == 'On' and no_motion_minutes > 30 then --change the 30 to the amount of minutes you prefer
+ 	commandArray[status_switch]='Off'
+end
+if debug then print("completed script_time_nomotion") end
+return commandArray
